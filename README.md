@@ -84,7 +84,7 @@ cd WaterAI
 
 # 2. Create virtual environment
 python -m venv .venv
-source .venv/bin/activate  # For Windows: .venv\Scripts\activate
+source .venv/bin/activate  # For Windows: .venv\Scripts\activate.ps1
 
 # 3. Install dependencies
 pip install -r requirements.txt
