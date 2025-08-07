@@ -1,0 +1,1366 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Water Quality AI Analyzer - SDG 6</title>
+    <link rel="icon" href="favicon.png" type="image/png" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      :root {
+        --primary-gradient: linear-gradient(
+          135deg,
+          #79d5ffff 0%,
+          #a66ae2ff 100%
+        );
+        --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --error-color: #ef4444;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --bg-primary: #ffffff;
+        --bg-secondary: #f9fafb;
+        --border-color: #e5e7eb;
+        --theme-toggle-bg: #374151;
+        --theme-toggle-color: #ffffff;
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+          0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+          0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+          0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        --border-radius: 12px;
+        --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      [data-theme="dark"] {
+        --primary-gradient: linear-gradient(
+          135deg,
+          #0a3d55ff 0%,
+          #3d1f5cff 100%
+        );
+        --text-primary: #f9fafb;
+        --text-secondary: #d1d5db;
+        --bg-primary: #1f2937;
+        --bg-secondary: #374151;
+        --border-color: #4b5563;
+        --theme-toggle-bg: #f3f4f6;
+        --theme-toggle-color: #1f2937;
+      }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          Roboto, sans-serif;
+        background: var(--primary-gradient);
+        color: var(--text-primary);
+        line-height: 1.6;
+        min-height: 100vh;
+        padding: 1rem;
+        position: relative;
+        transition: var(--transition);
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: radial-gradient(
+            circle at 20% 80%,
+            rgba(120, 119, 198, 0.3) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 80% 20%,
+            rgba(255, 119, 198, 0.3) 0%,
+            transparent 50%
+          ),
+          radial-gradient(
+            circle at 40% 40%,
+            rgba(120, 219, 255, 0.2) 0%,
+            transparent 50%
+          );
+        pointer-events: none;
+        z-index: -1;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 2rem;
+        padding: 2rem 0;
+        position: relative;
+      }
+
+      .header h1 {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 700;
+        margin-bottom: 1rem;
+        background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .theme-toggle {
+        position: relative;
+        align-self: end;
+        top: -1rem;
+        background: var(--theme-toggle-bg);
+        color: var(--theme-toggle-color);
+        border: none;
+        border-radius: 50px;
+        padding: 0.35rem 0.75rem;
+        cursor: pointer;
+        font-size: 0.87rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        transition: var(--transition);
+        backdrop-filter: blur(10px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .theme-toggle:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .theme-icon {
+        font-size: 1rem;
+      }
+
+      .header p {
+        font-size: clamp(1rem, 2.5vw, 1.25rem);
+        opacity: 0.95;
+        font-weight: 400;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .header::after {
+        content: "";
+        display: block;
+        width: 80px;
+        height: 4px;
+        background: var(--accent-gradient);
+        margin: 1.5rem auto 0;
+        border-radius: 2px;
+      }
+
+      .form-container {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 24px;
+        padding: clamp(1.5rem, 4vw, 3rem);
+        box-shadow: var(--shadow-xl);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .form-container::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--primary-gradient);
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+
+      .form-group {
+        position: relative;
+      }
+
+      .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      input,
+      textarea,
+      select {
+        width: 100%;
+        padding: 1rem;
+        border: 2px solid var(--border-color);
+        border-radius: var(--border-radius);
+        font-size: 1rem;
+        font-family: inherit;
+        transition: var(--transition);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+      }
+
+      input:focus,
+      textarea:focus,
+      select:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        transform: translateY(-1px);
+      }
+
+      input:hover,
+      textarea:hover,
+      select:hover {
+        border-color: #9ca3af;
+      }
+
+      textarea {
+        resize: vertical;
+        min-height: 100px;
+        font-family: inherit;
+      }
+
+      select {
+        cursor: pointer;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 0.75rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 2.5rem;
+        appearance: none;
+      }
+
+      #submitBtn {
+        width: 100%;
+        padding: 1.25rem 2rem;
+        background: var(--primary-gradient);
+        color: white;
+        border: none;
+        border-radius: var(--border-radius);
+        cursor: pointer;
+        font-size: 1.1rem;
+        font-weight: 600;
+        font-family: inherit;
+        transition: var(--transition);
+        position: relative;
+        overflow: hidden;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      #submitBtn::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        transition: left 0.5s;
+      }
+
+      button:hover::before {
+        left: 100%;
+      }
+
+      button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+      }
+
+      button:active {
+        transform: translateY(0);
+      }
+
+      button:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      button:disabled:hover {
+        transform: none;
+        box-shadow: none;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        margin-top: 2rem;
+        padding: 2rem;
+      }
+
+      .spinner {
+        border: 4px solid rgba(102, 126, 234, 0.1);
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 1rem;
+      }
+
+      .loading p {
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .result-container {
+        margin-top: 2rem;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        border-radius: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        overflow: hidden;
+        box-shadow: var(--shadow-xl);
+      }
+
+      .result-container h2 {
+        background: var(--primary-gradient);
+        color: white;
+        padding: 1.5rem 2rem;
+        margin: 0;
+        font-size: 1.5rem;
+        font-weight: 700;
+      }
+
+      .analysis-section {
+        margin: 1.5rem;
+        background: var(--bg-primary);
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-color);
+      }
+
+      .analysis-section h3 {
+        color: #667eea;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .analysis-section h3::before {
+        content: "";
+        width: 4px;
+        height: 20px;
+        background: var(--primary-gradient);
+        border-radius: 2px;
+      }
+
+      .analysis-section p {
+        line-height: 1.7;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+      }
+
+      .data-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+        background: var(--bg-primary);
+        border-radius: var(--border-radius);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+      }
+
+      .data-table th,
+      .data-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid var(--border-color);
+      }
+
+      .data-table th {
+        background: var(--primary-gradient);
+        color: white;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+      }
+
+      .data-table tr:hover {
+        background-color: var(--bg-secondary);
+      }
+
+      .data-table tr:last-child td {
+        border-bottom: none;
+      }
+
+      .status-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+      }
+
+      .status-excellent {
+        background-color: var(--success-color);
+      }
+      .status-good {
+        background-color: #06b6d4;
+      }
+      .status-fair {
+        background-color: var(--warning-color);
+      }
+      .status-poor {
+        background-color: #f97316;
+      }
+      .status-critical {
+        background-color: var(--error-color);
+      }
+      .status-unknown {
+        background-color: var(--text-secondary);
+      }
+
+      .parameter-value {
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+
+      .parameter-unit {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
+
+      .sdg-content {
+        background: linear-gradient(135deg, #e0f2fe 0%, #f3e5f5 100%);
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        border-left: 4px solid #667eea;
+      }
+
+      .sdg-content h4 {
+        color: #667eea;
+        margin-bottom: 1rem;
+        font-size: 1.125rem;
+        font-weight: 600;
+      }
+      .sdg-content p {
+        color: #667eea;
+      }
+
+      .sdg-goals {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .sdg-goal {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        border-left: 3px solid #667eea;
+        box-shadow: var(--shadow-sm);
+        transition: var(--transition);
+      }
+
+      .sdg-goal:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-md);
+      }
+
+      .status-badge {
+        display: inline-block;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .status-excellent {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: var(--success-color);
+      }
+      .status-good {
+        background-color: rgba(6, 182, 212, 0.1);
+        color: #0891b2;
+      }
+      .status-fair {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: var(--warning-color);
+      }
+      .status-poor {
+        background-color: rgba(249, 115, 22, 0.1);
+        color: #ea580c;
+      }
+      .status-critical {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: var(--error-color);
+      }
+
+      .risk-low {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: var(--success-color);
+      }
+      .risk-medium {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: var(--warning-color);
+      }
+      .risk-high {
+        background-color: rgba(249, 115, 22, 0.1);
+        color: #ea580c;
+      }
+      .risk-critical {
+        background-color: rgba(239, 68, 68, 0.1);
+        color: var(--error-color);
+      }
+
+      ul {
+        list-style-type: none;
+        padding-left: 0;
+      }
+
+      li {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        padding-left: 1.5rem;
+      }
+
+      li:last-child {
+        border-bottom: none;
+      }
+
+      li::before {
+        content: "•";
+        color: #667eea;
+        font-weight: bold;
+        position: absolute;
+        left: 0;
+      }
+
+      /* Responsive Design */
+      @media (max-width: 768px) {
+        body {
+          padding: 0.5rem;
+        }
+
+        .form-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+
+        .header h1 {
+          font-size: 2rem;
+        }
+
+        .theme-toggle {
+          position: relative;
+          align-self: end;
+          top: -1rem;
+          display: inline-flex;
+        }
+
+        .form-container {
+          padding: 1.5rem;
+          border-radius: 16px;
+        }
+
+        .data-table {
+          font-size: 0.875rem;
+        }
+
+        .data-table th,
+        .data-table td {
+          padding: 0.75rem 0.5rem;
+        }
+
+        .analysis-section {
+          margin: 1rem;
+          padding: 1rem;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .header {
+          padding: 1rem 0;
+        }
+
+        .form-container {
+          padding: 1rem;
+        }
+
+        .data-table {
+          font-size: 0.75rem;
+        }
+
+        .data-table th,
+        .data-table td {
+          padding: 0.5rem 0.25rem;
+        }
+
+        .sdg-goals {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      /* Dark mode support */
+      [data-theme="dark"] .form-container {
+        background: rgba(31, 41, 55, 0.95);
+      }
+
+      [data-theme="dark"] .result-container {
+        background: rgba(31, 41, 55, 0.95);
+      }
+
+      [data-theme="dark"] .analysis-section {
+        background: var(--bg-secondary);
+        border-color: var(--border-color);
+      }
+
+      [data-theme="dark"] .data-table {
+        background: var(--bg-secondary);
+      }
+
+      [data-theme="dark"] .sdg-goal {
+        background: var(--bg-secondary);
+      }
+
+      /* Animation for form elements */
+      .form-group {
+        animation: fadeInUp 0.6s ease-out;
+      }
+
+      .form-group:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .form-group:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .form-group:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      .form-group:nth-child(4) {
+        animation-delay: 0.4s;
+      }
+      .form-group:nth-child(5) {
+        animation-delay: 0.5s;
+      }
+      .form-group:nth-child(6) {
+        animation-delay: 0.6s;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Accessibility improvements */
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      /* Focus indicators for better accessibility */
+      input:focus-visible,
+      textarea:focus-visible,
+      select:focus-visible,
+      button:focus-visible {
+        outline: 2px solid #667eea;
+        outline-offset: 2px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Water Quality AI Analyzer</h1>
+        <p>
+          Advanced analysis and insights for clean water and sanitation aligned
+          with UN SDG 6
+        </p>
+      </div>
+
+      <button
+        class="theme-toggle"
+        onclick="toggleTheme()"
+        aria-label="Toggle theme"
+      >
+        <span class="theme-icon" id="themeIcon">🌙</span>
+        <span id="themeText">Dark Mode</span>
+      </button>
+
+      <div class="form-container">
+        <form id="waterForm">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="location">Location*</label>
+              <input
+                type="text"
+                id="location"
+                name="location"
+                placeholder="Enter location (e.g., Mumbai, India)"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="water_source">Water Source*</label>
+              <select id="water_source" name="water_source" required>
+                <option value="">Select water source</option>
+                <option value="river">River</option>
+                <option value="lake">Lake</option>
+                <option value="groundwater">Groundwater/Well</option>
+                <option value="municipal">Municipal Supply</option>
+                <option value="rainwater">Rainwater</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="ph_level">pH Level (0-14)*</label>
+              <input
+                type="number"
+                step="0.1"
+                id="ph_level"
+                name="ph_level"
+                placeholder="Ideal: 7.0 (neutral)"
+                min="0"
+                max="14"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="turbidity">Turbidity (NTU)*</label>
+              <input
+                type="number"
+                step="0.1"
+                id="turbidity"
+                name="turbidity"
+                placeholder="Ideal: 0.5 NTU (clear water)"
+                min="0"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="tds">Total Dissolved Solids (mg/L)</label>
+              <input
+                type="number"
+                step="1"
+                id="tds"
+                name="tds"
+                placeholder="Ideal: 150-300 mg/L"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="chlorine">Free Chlorine (mg/L)</label>
+              <input
+                type="number"
+                step="0.01"
+                id="chlorine"
+                name="chlorine"
+                placeholder="Ideal: 0.2-0.5 mg/L"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="bacteria_count">E. coli Count (CFU/100mL)</label>
+              <input
+                type="number"
+                id="bacteria_count"
+                name="bacteria_count"
+                placeholder="Ideal: 0 CFU/100mL (none detected)"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="nitrates">Nitrates (mg/L)</label>
+              <input
+                type="number"
+                step="0.1"
+                id="nitrates"
+                name="nitrates"
+                placeholder="Ideal: <5 mg/L"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="fluoride">Fluoride (mg/L)</label>
+              <input
+                type="number"
+                step="0.01"
+                id="fluoride"
+                name="fluoride"
+                placeholder="Ideal: 0.7-1.0 mg/L"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="iron">Iron (mg/L)</label>
+              <input
+                type="number"
+                step="0.01"
+                id="iron"
+                name="iron"
+                placeholder="Ideal: <0.1 mg/L"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="hardness">Water Hardness (mg/L as CaCO3)</label>
+              <input
+                type="number"
+                step="1"
+                id="hardness"
+                name="hardness"
+                placeholder="Ideal: 60-120 mg/L (moderately soft)"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group full-width">
+              <label for="additional_notes"
+                >Additional Water Quality Observations</label
+              >
+              <textarea
+                id="additional_notes"
+                name="additional_notes"
+                placeholder="Describe any observations: color (should be colorless), odor (should be odorless), taste (should be tasteless), temperature, etc."
+              ></textarea>
+            </div>
+
+            <div class="form-group full-width">
+              <button id="submitBtn" type="button" onclick="submitData()">
+                Analyze Water Data
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p>Analyzing data, please wait...</p>
+        </div>
+
+        <div id="result" class="result-container" style="display: none"></div>
+      </div>
+    </div>
+
+    <script>
+      // Theme management
+      function initializeTheme() {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+        updateThemeToggle(savedTheme);
+      }
+
+      function toggleTheme() {
+        const currentTheme =
+          document.documentElement.getAttribute("data-theme");
+        const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+        document.documentElement.setAttribute("data-theme", newTheme);
+        localStorage.setItem("theme", newTheme);
+        updateThemeToggle(newTheme);
+      }
+
+      function updateThemeToggle(theme) {
+        const themeIcon = document.getElementById("themeIcon");
+        const themeText = document.getElementById("themeText");
+
+        if (theme === "dark") {
+          themeIcon.textContent = "☀️";
+          themeText.textContent = "Light Mode";
+        } else {
+          themeIcon.textContent = "🌙";
+          themeText.textContent = "Dark Mode";
+        }
+      }
+
+      // Initialize theme on page load
+      document.addEventListener("DOMContentLoaded", initializeTheme);
+
+      async function submitData() {
+        const formInputs = document.querySelectorAll(
+          "#waterForm input, #waterForm select, #waterForm textarea"
+        );
+        const data = {};
+
+        // Collect form data
+        formInputs.forEach((input) => {
+          if (input.value.trim() !== "") {
+            data[input.name] = input.value.trim();
+          }
+        });
+
+        // Show loading
+        const loadingDiv = document.getElementById("loading");
+        const resultContainer = document.getElementById("result");
+        const submitButton = document.querySelector("#submitBtn");
+
+        loadingDiv.style.display = "block";
+        resultContainer.style.display = "none";
+        submitButton.disabled = true;
+        submitButton.textContent = "Analyzing...";
+
+        try {
+          const response = await fetch("/api/analyze", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+
+          if (response.ok) {
+            displayResults(result.analysis);
+          } else {
+            displayError(result.error || "Failed to analyze water data");
+          }
+        } catch (error) {
+          displayError(
+            "Network error: Please check your connection and try again."
+          );
+        } finally {
+          // Hide loading
+          loadingDiv.style.display = "none";
+          submitButton.disabled = false;
+          submitButton.textContent = "Analyze Water Data";
+        }
+      }
+
+      function getWaterQualityStandards() {
+        return {
+          ph_level: { min: 6.5, max: 8.5, unit: "", name: "pH Level" },
+          turbidity: { max: 1, unit: "NTU", name: "Turbidity" },
+          tds: { max: 500, unit: "mg/L", name: "Total Dissolved Solids" },
+          chlorine: { min: 0.2, max: 4, unit: "mg/L", name: "Free Chlorine" },
+          bacteria_count: { max: 0, unit: "CFU/100mL", name: "E. coli Count" },
+          nitrates: { max: 10, unit: "mg/L", name: "Nitrates" },
+          fluoride: { min: 0.5, max: 1.5, unit: "mg/L", name: "Fluoride" },
+          iron: { max: 0.3, unit: "mg/L", name: "Iron" },
+          hardness: { max: 300, unit: "mg/L as CaCO3", name: "Water Hardness" },
+        };
+      }
+
+      function getParameterStatus(parameter, value, standards) {
+        if (!standards[parameter] || value === undefined || value === "")
+          return "unknown";
+
+        const std = standards[parameter];
+        const numValue = parseFloat(value);
+
+        if (parameter === "ph_level") {
+          if (numValue >= std.min && numValue <= std.max) return "excellent";
+          if (numValue >= 6.0 && numValue <= 9.0) return "good";
+          if (numValue >= 5.5 && numValue <= 9.5) return "fair";
+          return "critical";
+        }
+
+        if (std.max !== undefined) {
+          if (numValue <= std.max * 0.5) return "excellent";
+          if (numValue <= std.max * 0.8) return "good";
+          if (numValue <= std.max) return "fair";
+          if (numValue <= std.max * 1.5) return "poor";
+          return "critical";
+        }
+
+        return "unknown";
+      }
+
+      function createDataTable() {
+        const formInputs = document.querySelectorAll(
+          "#waterForm input, #waterForm select, #waterForm textarea"
+        );
+        const data = {};
+
+        formInputs.forEach((input) => {
+          if (input.value.trim() !== "") {
+            data[input.name] = input.value.trim();
+          }
+        });
+
+        const standards = getWaterQualityStandards();
+        let tableHtml = `
+                <div class="analysis-section">
+                    <h3>Water Quality Parameters Analysis</h3>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Parameter</th>
+                                <th>Measured Value</th>
+                                <th>WHO Standard</th>
+                                <th>Status</th>
+                                <th>Assessment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+        Object.keys(standards).forEach((param) => {
+          if (data[param]) {
+            const std = standards[param];
+            const value = data[param];
+            const status = getParameterStatus(param, value, standards);
+
+            let standardRange = "";
+            if (std.min !== undefined && std.max !== undefined) {
+              standardRange = `${std.min} - ${std.max} ${std.unit}`;
+            } else if (std.max !== undefined) {
+              standardRange = `≤ ${std.max} ${std.unit}`;
+            } else if (std.min !== undefined) {
+              standardRange = `≥ ${std.min} ${std.unit}`;
+            }
+
+            let assessment = "";
+            switch (status) {
+              case "excellent":
+                assessment = "Excellent - Well within standards";
+                break;
+              case "good":
+                assessment = "Good - Acceptable quality";
+                break;
+              case "fair":
+                assessment = "Fair - Needs attention";
+                break;
+              case "poor":
+                assessment = "Poor - Requires treatment";
+                break;
+              case "critical":
+                assessment = "Critical - Immediate action needed";
+                break;
+              default:
+                assessment = "Unknown - Insufficient data";
+            }
+
+            tableHtml += `
+                        <tr>
+                            <td><strong>${std.name}</strong></td>
+                            <td>
+                                <span class="parameter-value">${value}</span>
+                                <span class="parameter-unit">${std.unit}</span>
+                            </td>
+                            <td>${standardRange}</td>
+                            <td>
+                                <span class="status-indicator status-${status}"></span>
+                                <span class="status-badge status-${status}">${status.toUpperCase()}</span>
+                            </td>
+                            <td>${assessment}</td>
+                        </tr>
+                    `;
+          }
+        });
+
+        tableHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+
+        return tableHtml;
+      }
+
+      function parseMarkdownToHTML(text) {
+        if (!text) return "";
+
+        return (
+          text
+            // Convert **bold** to <strong>bold</strong>
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            // Convert *italic* to <em>italic</em>
+            .replace(/\*(.*?)\*/g, "<em>$1</em>")
+            // Convert line breaks to <br>
+            .replace(/\n/g, "<br>")
+            // Convert bullet points
+            .replace(/^- (.*$)/gim, "<li>$1</li>")
+            // Wrap consecutive <li> items in <ul>
+            .replace(/(<li>.*<\/li>)/s, "<ul>$1</ul>")
+            // Convert numbered lists
+            .replace(/^\d+\. (.*$)/gim, "<li>$1</li>")
+        );
+      }
+
+      function displayResults(analysis) {
+        const resultContainer = document.getElementById("result");
+        let html = "<h2>Water Quality Analysis Results</h2>";
+
+        // Water Quality Data Table
+        html += createDataTable();
+
+        // Quality Assessment
+        if (analysis.quality_assessment) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Overall Quality Assessment</h3>
+                        <span class="status-badge status-${analysis.quality_assessment.toLowerCase()}">
+                            ${analysis.quality_assessment}
+                        </span>
+                    </div>
+                `;
+        }
+
+        // Risk Level
+        if (analysis.risk_level) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Health Risk Level</h3>
+                        <span class="status-badge risk-${analysis.risk_level.toLowerCase()}">
+                            ${analysis.risk_level} Risk
+                        </span>
+                    </div>
+                `;
+        }
+
+        // Key Issues
+        if (analysis.key_issues && analysis.key_issues.length > 0) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Key Issues Identified</h3>
+                        <ul>
+                            ${analysis.key_issues
+                              .map((issue) => `<li>${parseMarkdownToHTML(issue)}</li>`)
+                              .join("")}
+                        </ul>
+                    </div>
+                `;
+        }
+
+        // Health Impacts
+        if (analysis.health_impacts && analysis.health_impacts.length > 0) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Health Impacts Identified</h3>
+                        <ul>
+                            ${analysis.health_impacts
+                              .map((issue) => `<li>${parseMarkdownToHTML(issue)}</li>`)
+                              .join("")}
+                        </ul>
+                    </div>
+                `;
+        }
+
+        // Immediate Actions
+        if (
+          analysis.immediate_actions &&
+          analysis.immediate_actions.length > 0
+        ) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Immediate Actions Needed</h3>
+                        <ul>
+                            ${analysis.immediate_actions
+                              .map((action) => `<li>${parseMarkdownToHTML(action)}</li>`)
+                              .join("")}
+                        </ul>
+                    </div>
+                `;
+        }
+
+        // Short-term Solutions
+        if (
+          analysis.short_term_solutions &&
+          analysis.short_term_solutions.length > 0
+        ) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Short-term Solutions (1-6 months)</h3>
+                        <ul>
+                            ${analysis.short_term_solutions
+                              .map((solution) => `<li>${parseMarkdownToHTML(solution)}</li>`)
+                              .join("")}
+                        </ul>
+                    </div>
+                `;
+        }
+
+        // Long-term Solutions
+        if (
+          analysis.long_term_solutions &&
+          analysis.long_term_solutions.length > 0
+        ) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Long-term Solutions (6+ months)</h3>
+                        <ul>
+                            ${analysis.long_term_solutions
+                              .map((solution) => `<li>${parseMarkdownToHTML(solution)}</li>`)
+                              .join("")}
+                        </ul>
+                    </div>
+                `;
+        }
+
+        // Cost Estimates
+        if (
+          analysis.cost_estimates &&
+          analysis.cost_estimates.length > 0
+        ) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Cost Estimates</h3>
+                        <ul>
+                            ${analysis.cost_estimates
+                              .map((solution) => `<li>${parseMarkdownToHTML(solution)}</li>`)
+                              .join("")}
+                        </ul>
+                    </div>
+                `;
+        }
+
+        // Monitoring Plan
+        if (
+          analysis.monitoring_plan &&
+          analysis.monitoring_plan.length > 0
+        ) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Monitoring Plan</h3>
+                        <ul>
+                            ${analysis.monitoring_plan
+                              .map((solution) => `<li>${parseMarkdownToHTML(solution)}</li>`)
+                              .join("")}
+                        </ul>
+                    </div>
+                `;
+        }
+
+        // Community Involvement
+        if (
+          analysis.community_involvement &&
+          analysis.community_involvement.length > 0
+        ) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Cost Estimates</h3>
+                        <ul>
+                            ${analysis.community_involvement
+                              .map((solution) => `<li>${parseMarkdownToHTML(solution)}</li>`)
+                              .join("")}
+                        </ul>
+                    </div>
+                `;
+        }
+
+        // Enhanced SDG 6 Alignment
+        if (analysis.sdg6_alignment) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>SDG 6: Clean Water and Sanitation Alignment</h3>
+                        <div class="sdg-content">
+                            <h4>🎯 Sustainable Development Goal 6</h4>
+                            <p>${parseMarkdownToHTML(analysis.sdg6_alignment)}</p>
+                            
+                            <div class="sdg-goals">
+                                <div class="sdg-goal">
+                                    <strong>6.1:</strong> Universal access to safe drinking water
+                                </div>
+                                <div class="sdg-goal">
+                                    <strong>6.2:</strong> Access to adequate sanitation and hygiene
+                                </div>
+                                <div class="sdg-goal">
+                                    <strong>6.3:</strong> Improve water quality and reduce pollution
+                                </div>
+                                <div class="sdg-goal">
+                                    <strong>6.4:</strong> Increase water-use efficiency
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+        }
+
+        // Fallback for unstructured response
+        if (!analysis.quality_assessment && analysis.full_analysis) {
+          html += `
+                    <div class="analysis-section">
+                        <h3>Analysis</h3>
+                        <pre style="white-space: pre-wrap; font-family: inherit;">${analysis.full_analysis}</pre>
+                    </div>
+                `;
+        }
+
+        resultContainer.innerHTML = html;
+        resultContainer.style.display = "block";
+      }
+
+      function displayError(errorMessage) {
+        const resultContainer = document.getElementById("result");
+        resultContainer.innerHTML = `
+                <h2>Analysis Error</h2>
+                <div class="analysis-section">
+                    <h3 style="color: var(--error-color);">Error</h3>
+                    <p>${errorMessage}</p>
+                </div>
+            `;
+        resultContainer.style.display = "block";
+      }
+    </script>
+  </body>
+</html>
