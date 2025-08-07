@@ -1,2 +1,3 @@
 # Ignore sensitive files (e.g., environment variables)
 .env
+.mypy_cache
