@@ -191,5 +191,5 @@ WaterAI is built to support:
 ---
 
 <p align="center">
-  Built with ❤️ by <b>Me</b> | 2025
+  Built with <code>Code</code> by <b>Me</b> | 2025
 </p>
