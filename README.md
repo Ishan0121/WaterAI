@@ -114,9 +114,12 @@ Visit `http://localhost:5000` in your browser.
 
 ## 📊 Demo Preview
 
-> *(Insert a GIF or screenshot here of the form + results)*
-> I can help you create one if you want it polished.
+<!-- > *(Insert a GIF or screenshot here of the form + results)*
+> I can help you create one if you want it polished. -->
 
+<video src="./preview/preview.mp4" controls preload></video>
+---
+## [Click to see the live preview](https://waterai.onrender.com/)
 ---
 
 ## 🧠 AI Prompt Logic
